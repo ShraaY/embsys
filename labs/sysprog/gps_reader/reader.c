@@ -8,19 +8,23 @@
 
 #include <util.h>
 
+
+#include <syslog.h>
+
 //-----------------------------------------------------------------------------
 int main(int argc, char *argv [])
 {
     char * port = NULL;
+    char * port2 = NULL;
 
     // parse comand line
-    if (argc != 3)
+    if (argc != 5) //nombre d'args
     {
         fprintf(stderr, "Invalid usage: reader -p port_name\n");
         exit(EXIT_FAILURE);
     }
 
-    char * options = "p:";
+    char * options = "p:s:";
     int option;
     while((option = getopt(argc, argv, options)) != -1)
     {
@@ -28,6 +32,10 @@ int main(int argc, char *argv [])
         {
             case 'p':
                 port = optarg;
+                break;
+
+            case 's':
+                port2 =  optarg;
                 break;
 
             case '?':
@@ -45,18 +53,40 @@ int main(int argc, char *argv [])
     }
     tcflush(fd, TCIOFLUSH);
 
+    int fd2 = open(port2, O_RDWR | O_NOCTTY);
+    if (fd2 == -1)
+    {
+        perror("open");
+        exit(EXIT_FAILURE);
+    }
+    tcflush(fd2, TCIOFLUSH);
+
+    int ft = fd;
+
     // read port
     char buff[50];
+    char buff2[50];
     fd_set fdset;
+
+    //open syslog
+    openlog ("time", LOG_CONS | LOG_PID | LOG_CRON, LOG_LOCAL1);
 
     while(1)
     {
         bzero(buff, sizeof(buff));
-
         FD_ZERO(&fdset);
         FD_SET(fd, &fdset);
 
-        select(fd+1, &fdset, NULL, NULL, NULL);
+        bzero(buff2, sizeof(buff2));
+        FD_SET(fd2, &fdset);
+
+        if (fd <= fd2)
+        {
+            ft = fd2;
+        }else{
+            ft = fd;
+        }
+        select(ft+1, &fdset, NULL, NULL, NULL);
 
         if (FD_ISSET(fd, &fdset))
         {
@@ -64,14 +94,35 @@ int main(int argc, char *argv [])
 
             if (bytes > 0)
             {
-                printf("%s\n", buff);
+                printf("port 1: %s\n", buff);
                 fflush(stdout);
             }
         }
+
+        if (FD_ISSET(fd2, &fdset))
+        {
+            int bytes2 = read (fd2, buff2, sizeof(buff2));
+
+            if (bytes2 > 0)
+            {
+                printf("port 2: %s\n", buff2);
+                fflush(stdout);
+            }
+        }
+
+
+
+    //syslog(1, "aaaa"); //ds console /var/log tail /var/log/syslog
+
+
     }
 
     // close serial port
     close(fd);
+    close(fd2);
+
+    closelog();
+
 
     exit(EXIT_SUCCESS);
 }
