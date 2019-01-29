@@ -24,7 +24,7 @@ buildroot-precompiled-2017.08.tar.gz
 ### Découverte de Buildroot
 
 La tarball `buildroot-precompiled-2017.08.tar.gz` est une version modifiée de
-la version officielle de Buildroot disponible ici:
+la version officielle de Buildrootls disponible ici:
 https://buildroot.org/downloads/buildroot-2017.08.tar.gz.
 
 Vous pouvez considérer cette tarball comme un
@@ -48,8 +48,14 @@ cités précédement:
 # cd buildroot-precompiled-2017.08
 ````
 
-**Question 1**: Décriver de manière plus précise l'utilité ainsi que la syntaxe
-                de chacun des 3 fichiers mentionnés ci-dessus.
+**Question 1**: Décriver de manière plus précise l'utilité ainsi que la 	syntaxe de chacun des 3 fichiers mentionnés ci-dessus.
+"embsys_defconfig", et "busybox.config" contiennent les éléments de l'interface de la tarball et leur états de compilation
+"m" = "module" complier mais mit hors du kernel, may cause failure if needed before loading
+"y" = "compiled", 
+"is not set" = not compiled
+"users.tables" recence les utilisateurs de l'ordi
+user -1 users_group -1 =user1* /home/user /bin/sh -
+
 
 Par défaut, le projet Buildroot fournit des configurations pour certaines
 cartes dans le répertoire *configs*.
@@ -57,14 +63,36 @@ cartes dans le répertoire *configs*.
 **Question 2**: En considérant que la cible est une carte RaspberryPi3 avec un
                 OS 32 bits, quel est le fichier de configuration Buildroot par
                 défaut à utiliser?
+Le fichier config a utilisé est "raspberrypi3_defconfig" dans "config".
 
 **Question 3**: Que contient le répertoire *package*?
+Il contient toutes les libraries et programmes de la configuration compilée. Ces dossiers contiennent eux mêmes les patchs, une configuration, un makefile utilisable par buildroot (*.mk).
 
 **Question 4**: Décrivez l'utilité des différents fichiers du répertoire
                 *package/openssh*.
+Il y a un make, un fichier de config, et des patches. Ils servent à la configuration du openssh (outil pour utiliser le protocole ssh).
+0001-configure-ac-detect-mips-abi.patch #fichier de corrections
+0002-configure-ac-properly-set-seccomp-audit-arch-for-mips64.patch
+0003-fix-pam-uclibc-pthreads-clash.patch
+0004-fix-howmany-include.patch	
+S50sshd #permet de gerer le ssh, arreter/demarrer, finir par ".*d" ->daemon
+openssh.hash
+openssh.mk #make
+sshd.service
 
 **Question 5**: À quoi servent les fichiers du répertoire
                 *boards/raspberrypi3*?
+Ils y a des fichiers de configuration (.cfg) pour toutes les versions d'OS de raspbarrypi disponibles, 2 .sh (script shell) "post_image" et "post_build, ainsi qu'un "readme" expiquant comment build une image du boot.
+genimage-raspberrypi.cfg
+genimage-raspberrypi3-64.cfg
+genimage-raspberrypi0.cfg
+genimage-raspberrypi3.cfg
+genimage-raspberrypi2.cfg
+post-image.sh
+readme.txt
+post-build.sh
+
+
 
 Désormais, lancez la commande suivante:
 
@@ -73,6 +101,7 @@ Désormais, lancez la commande suivante:
 ```
 
 **Question 6**: À quoi sert la commande précédente?
+Elle compile l'option "embsys_defconfig" du make Makefile. Ca reset les paramètres par defaut.
 
 Maintenant, lancez la commande suivante pour afficher le menu de configuration:
 
@@ -81,24 +110,27 @@ Maintenant, lancez la commande suivante pour afficher le menu de configuration:
 ````
 
 **Question 7**: En naviguant dans le menu, repérez:
-- l'architecture matérielle cible
-- le CPU ciblé
-- l'ABI (en rappellant la signification de celle choisie)
-- la librairie C utilisée
+- l'architecture matérielle cible: ARM little endian
+- le CPU ciblé: cortect s53cor
+- l'ABI (en rappellant la signification de celle choisie) (Appli Binary Interface) ELF (Exec & Linkable Format: format for lib & exec across != architectures and OS)
+- la librairie C utilisée: uClibc-ng
 - la version du cross-compilateur
-- la version du kernel
+- la version du kernel: 4.9.x ou raspberrypi trouvée sur github
 
 Il est possible de rechercher une chaine de caractère avec la commande */*
 (comme dans VIM).
 
 **Question 8**: En recherchant dans l'interface de Buildroot, déterminez si le
-                paquet *openssh* sera compilé et disponible dans l'OS cible. De
-                même, retrouver cette information en analysant le fichier de
+                paquet *openssh* sera compilé et disponible dans l'OS cible. De même, retrouver cette information en analysant le fichier de
                 configuration *embsys_defconfig*.
+le package BR2_PACKAGE_X est marqué comme "y" donc il sera compilé. C'ets un package qui se trouve dans embsys_config.
+
 
 **Question 9**: Qu'est ce que busybox? À quoi sert la commande
                 *make busybox-menuconfig*? Qu'obtiens t'on et que pouvons
                 nous faire?
+Busybox est une configuration de kernel.
+La commande execute l'option "busybox-menuconfig" du make. On entre dans l'interface de busyox et on peut alors modifier sa configuration.
 
 Par défaut, le bootloader de la RPI3 est utilisé. D'ailleurs, vous pouvez
 constater en allant dans le menu *Bootloaders* de l'interface de
@@ -117,6 +149,7 @@ l'image Docker que nous utilisons.
 
 **Question 10**: Que contient le répertoire *output/host*? À quoi correspond
                  le binaire *output/host/usr/bin/arm-linux-gcc*?
+Il contient des dossiers doc, lib, usr, etc. Le binaire compile le linux arm pour la rasp (-> gcc)
 
 Sur le conteneur Docker, créez un fichier *helloworld.c*:
 
@@ -140,6 +173,7 @@ hw: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, 
 
 **Question 11**: Décrire le résultat de la commande *file*. Que se passe t-il
                  si vous exécutez la commande *./hw*?
+"file" permet de voir les caracteristiques de fichiers (type de données, OS, links, ...). Faire "./hw" execute le helloworld, (nom donné à l'exec par " helloworld.c -o hw").
 
 Cette fois, lancez la commande suivante à partir du répertoire contenant
 Buildroot:
@@ -152,14 +186,33 @@ Buildroot:
                  Quelle différences constatez vous par rapport au cas précédent
                  (binaire généré avec gcc)? Que se passe t-il si vous essayez
                  d'exécuter la commande *./hw*? Expliquez pourquoi.
+On obtient "ELF 32-bit LSB executable, ARM, EABI5 version 1 (SYSV), dynamically linked, interpreter /lib/ld-uClibc.so.0, not stripped" Le binaire n'est plus un "shared object" mais un executable, en ARM EABI5 au lieu de x86-64, avec la library uClibc au lieu de linux x86-64.
+
+La commande "./hw" rend "bash: ./hw: cannot execute binary file: Exec format error", ce n'est plus compatible avec la version qu'on a.  "arm-linuw-gcc" ?= crosscompil'???
+
 
 ### Images
 
-**Question 13**: Que contient le répertoire *output/images*? Décrivez notamment
-                 l'utilité des fichiers *rootfs.tar*, *zImage* et *sdcard.img*.
+**Question 13**: Que contient le répertoire *output/images*? Décrivez notamment l'utilité des fichiers *rootfs.tar*, *zImage* et *sdcard.img*.
+Il contient : 
+bcm2710-rpi-3-b.dtb
+bcm2710-rpi-cm3.dtb
+boot.vfat
+rootfs.ext4
+rootfs.ext2
+rootfs.tar
+rpi-firmware
+sdcard.img
+zImage
+"sdcard.img" est l'image à flacher sur la rasp. le ".tar" semble être l'archive de cette image, au cas où. Les ".extx" sont des systèmes de fichiers. "rpi-firmware" contient des config pour la rasp. "boot" et "les *.dtb" sont un boot et des arbres binaires du système.
+
 
 **Question 14**: Que vous dis les résultats de la commande *file* lorsque vous
                  l'utilisez sur les fichiers *zImage* et *sdcard.img*?
+zImage: Linux kernel ARM boot executable zImage (little-endian)
+
+sdcard.img: DOS/MBR boot sector; partition 1 : ID=0xc, active, start-CHS (0x0,0,2), end-CHS (0x4,20,17), startsector 1, 65536 sectors; partition 2 : ID=0x83, start-CHS (0x4,20,18), end-CHS (0x1d,146,54), startsector 65537, 409600 sectors
+
 
 Ensuite, lancez les commandes suivantes:
 
@@ -169,6 +222,9 @@ Ensuite, lancez les commandes suivantes:
 ````
 
 **Question 15**: Que contient le répertoire */tmp/rootfs*?
+bin  etc   lib	  linuxrc  mnt	proc  run   sys  usr
+dev  home  lib32  media    opt	root  sbin  tmp  var
+C'est une image de l'OS rasp.
 
 ### Compilation : À ne pas faire pendant le TP (trop long)
 

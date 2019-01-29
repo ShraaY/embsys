@@ -34,6 +34,14 @@ Grâce à la documentation du kernel sur
 [sysfs](https://www.kernel.org/doc/Documentation/gpio/sysfs.txt), allumer et
 éteindre la LED connectée à la GPIO 17.
 
+ground led sur pin 9 (en face du vert, 5 en partant de l'opposé des ports usb, en interne) et l'entrée sur port 11 (/!\ sur le pin gpio 17, 1 port après le ground en interne)
+ds gpio
+echo 17 > export pour ajouter un port 11/gpio 17
+echo 17 > unexport pour enlever un port
+echo "out" > ds gpio 11 : direction pour en faire une sortie
+echo 1 > value pour allumer led
+echo 0 > value pour entiendre led
+
 ### Python
 
 Il existe aussi un paquet python pour la RPi. Ce paquet, installé via
@@ -43,9 +51,25 @@ buildroot, est nommé **python-rpi-gpio**. La documentation est
 Utiliser cette API Python pour allumer/éteindre la LED connectée à la GPIO 17
 (faire attention au mode BCM ou BOARD).
 
+reflasher la carte pour avoir python, relancer le gtkterm
+ds /root touch led.py, vi led.py avec 
+import RPi.GPIO as GPIO # Import Raspberry Pi GPIO library
+from time import sleep # Import the sleep function from the time module
+GPIO.setwarnings(False) # Ignore warning for now
+GPIO.setmode(GPIO.BOARD) # Use physical pin numbering
+GPIO.setup(11, GPIO.OUT, initial=GPIO.LOW) # Set pin 8 to be an output pin and set initial value to low (off)
+while True: # Run forever
+	GPIO.output(11, GPIO.HIGH) # Turn on
+	sleep(1) # Sleep for 1 second
+	GPIO.output(11, GPIO.LOW) # Turn off
+	sleep(1) # Sleep for 1 second
+python led.py
+
+
+
 ### PWM
 
-Le PWM, ou Pulse Mith Modulation, permet de simuler un signal continu en
+Le PWM, ou Pulse Mith Modulation, permet	 de simuler un signal continu en
 moyenne grâce à des signaux discrets (de valeur constante fixe). En image,
 cela donne ceci :
 
